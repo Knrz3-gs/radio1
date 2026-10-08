@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Radio Station - Live World Radio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .playing-wave span {
+      display: inline-block;
+      width: 3px;
+      height: 16px;
+      background-color: #3b82f6;
+      animation: wave 1.2s infinite ease-in-out;
+    }
+    .playing-wave span:nth-child(2) { animation-delay: 0.2s; }
+    .playing-wave span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes wave {
+      0%, 100% { height: 4px; }
+      50% { height: 18px; }
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans pb-28">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/50 sticky top-0 z-20 backdrop-blur-md">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="bg-blue-600 p-2.5 rounded-xl text-white shadow-lg shadow-blue-500/30">
+          <i class="fa-solid me-0 fa-radio text-xl"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-xl tracking-wide bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Radio Stream</h1>
+          <p class="text-xs text-slate-400">Live Global Radio Player</p>
+        </div>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="relative flex-1 max-w-md">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input 
+          type="text" 
+          id="search-input" 
+          placeholder="Search by name, genre, or country..." 
+          class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+        >
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="max-w-6xl mx-auto px-4 py-6 w-full flex-1">
+    
+    <!-- Genre Quick Filters -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none" id="genre-tags">
+      <button onclick="filterByTag('')" class="genre-btn active bg-blue-600 text-white px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all">All Top</button>
+      <button onclick="filterByTag('pop')" class="genre-btn bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all">Pop</button>
+      <button onclick="filterByTag('rock')" class="genre-btn bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all">Rock</button>
+      <button onclick="filterByTag('jazz')" class="genre-btn bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all">Jazz</button>
+      <button onclick="filterByTag('lofi')" class="genre-btn bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all">Lofi / Chill</button>
+      <button onclick="filterByTag('news')" class="genre-btn bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all">News</button>
+      <button onclick="filterByTag('electronic')" class="genre-btn bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all">Electronic</button>
+    </div>
+
+    <!-- Stations Grid Header -->
+    <div class="flex items-center justify-between mb-4">
+      <h2 id="section-title" class="text-lg font-semibold text-slate-200">Popular Stations</h2>
+      <span id="station-count" class="text-xs text-slate-400">Loading...</span>
+    </div>
+
+    <!-- Station Cards Grid -->
+    <div id="stations-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <!-- Cards dynamically rendered here -->
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading" class="text-center py-20">
+      <i class="fa-solid fa-circle-notch fa-spin text-3xl text-blue-500 mb-3"></i>
+      <p class="text-slate-400 text-sm">Fetching radio stations...</p>
+    </div>
+
+  </main>
+
+  <!-- Bottom Player Bar -->
+  <div class="fixed bottom-0 left-0 right-0 glass border-t border-slate-800 p-4 z-30 shadow-2xl">
+    <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
+      
+      <!-- Current Station Info -->
+      <div class="flex items-center gap-3 min-w-0 w-1/3">
+        <div id="player-favicon" class="w-12 h-12 rounded-lg bg-slate-800 flex items-center justify-center shrink-0 overflow-hidden border border-slate-700">
+          <i class="fa-solid fa-radio text-slate-500"></i>
+        </div>
+        <div class="min-w-0">
+          <h3 id="player-title" class="font-medium text-sm text-slate-100 truncate">No station selected</h3>
+          <p id="player-sub" class="text-xs text-slate-400 truncate">Select a station to play</p>
+        </div>
+      </div>
+
+      <!-- Player Controls -->
+      <div class="flex flex-col items-center gap-1">
+        <div class="flex items-center gap-4">
+          <button id="play-btn" onclick="togglePlay()" class="w-12 h-12 bg-blue-600 hover:bg-blue-500 rounded-full flex items-center justify-center text-white shadow-lg transition-transform active:scale-95 disabled:opacity-50" disabled>
+            <i id="play-icon" class="fa-solid fa-play text-lg translate-x-0.5"></i>
+          </button>
+        </div>
+        <div id="wave-anim" class="playing-wave flex items-center gap-1 h-4 opacity-0 transition-opacity">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <!-- Volume Controls -->
+      <div class="flex items-center justify-end gap-2 w-1/3 text-slate-400">
+        <i class="fa-solid fa-volume-high text-xs"></i>
+        <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.8" class="w-20 accent-blue-500 bg-slate-800 rounded-lg cursor-pointer">
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Audio Element -->
+  <audio id="audio-player"></audio>
+
+  <script>
+    const API_BASE = 'https://de1.api.radio-browser.info/json/stations';
+    const audio = document.getElementById('audio-player');
+    const playBtn = document.getElementById('play-btn');
+    const playIcon = document.getElementById('play-icon');
+    const stationsContainer = document.getElementById('stations-container');
+    const loadingEl = document.getElementById('loading');
+    const searchInput = document.getElementById('search-input');
+    const volumeSlider = document.getElementById('volume-slider');
+    const waveAnim = document.getElementById('wave-anim');
+
+    let currentStation = null;
+    let debounceTimer;
+
+    // Fetch initial top stations
+    async function fetchStations(endpoint = '/topclick/30') {
+      loadingEl.classList.remove('hidden');
+      stationsContainer.innerHTML = '';
+      try {
+        const response = await fetch(`${API_BASE}${endpoint}`);
+        const data = await response.json();
+        renderStations(data);
+      } catch (err) {
+        stationsContainer.innerHTML = `<p class="col-span-full text-center text-red-400 text-sm py-10">Failed to load stations. Please try refreshing.</p>`;
+      } finally {
+        loadingEl.classList.add('hidden');
+      }
+    }
+
+    // Render stations in grid
+    function renderStations(stations) {
+      document.getElementById('station-count').innerText = `${stations.length} stations found`;
+      
+      if (!stations.length) {
+        stationsContainer.innerHTML = `<p class="col-span-full text-center text-slate-500 text-sm py-10">No radio stations found.</p>`;
+        return;
+      }
+
+      stationsContainer.innerHTML = stations.map(station => {
+        const favicon = station.favicon || '';
+        const tags = station.tags ? station.tags.split(',').slice(0, 2).join(', ') : 'Music';
+        return `
+          <div onclick="selectStation('${station.stationuuid}', '${escapeHtml(station.name)}', '${station.url_resolved || station.url}', '${favicon}', '${escapeHtml(station.country)}')" 
+               class="station-card bg-slate-900 border border-slate-800 hover:border-slate-700 p-3.5 rounded-xl flex items-center gap-3 cursor-pointer transition-all hover:-translate-y-0.5 group">
+            <div class="w-12 h-12 rounded-lg bg-slate-800 shrink-0 overflow-hidden flex items-center justify-center border border-slate-700 group-hover:border-blue-500/50">
+              ${favicon ? `<img src="${favicon}" onerror="this.onerror=null;this.parentElement.innerHTML='<i class=\\'fa-solid fa-radio text-slate-500\\'></i>'" class="w-full h-full object-cover">` : '<i class="fa-solid fa-radio text-slate-500"></i>'}
+            </div>
+            <div class="min-w-0 flex-1">
+              <h4 class="font-medium text-sm text-slate-200 truncate group-hover:text-blue-400 transition-colors">${escapeHtml(station.name)}</h4>
+              <p class="text-xs text-slate-500 truncate">${escapeHtml(station.country || 'Global')} • ${escapeHtml(tags)}</p>
+            </div>
+            <button class="w-8 h-8 rounded-full bg-slate-800 group-hover:bg-blue-600 flex items-center justify-center text-slate-300 group-hover:text-white transition-all shrink-0">
+              <i class="fa-solid fa-play text-xs"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectStation(uuid, name, url, favicon, country) {
+      currentStation = { uuid, name, url, favicon, country };
+      
+      document.getElementById('player-title').innerText = name;
+      document.getElementById('player-sub').innerText = country || 'Live Radio Stream';
+      
+      const faviconContainer = document.getElementById('player-favicon');
+      faviconContainer.innerHTML = favicon ? 
+        `<img src="${favicon}" onerror="this.onerror=null;this.parentElement.innerHTML='<i class=\\'fa-solid fa-radio text-slate-500\\'></i>'" class="w-full h-full object-cover">` : 
+        '<i class="fa-solid fa-radio text-slate-500"></i>';
+
+      audio.src = url;
+      playBtn.disabled = false;
+      playAudio();
+    }
+
+    function playAudio() {
+      audio.play().then(() => {
+        playIcon.className = "fa-solid fa-pause text-lg";
+        waveAnim.classList.remove('opacity-0');
+      }).catch(err => {
+        console.error("Playback error:", err);
+        document.getElementById('player-sub').innerText = 'Stream unavailable (Try another)';
+      });
+    }
+
+    function togglePlay() {
+      if (!currentStation) return;
+      if (audio.paused) {
+        playAudio();
+      } else {
+        audio.pause();
+        playIcon.className = "fa-solid fa-play text-lg translate-x-0.5";
+        waveAnim.classList.add('opacity-0');
+      }
+    }
+
+    // Genre filter toggle
+    function filterByTag(tag) {
+      document.querySelectorAll('.genre-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white');
+        btn.classList.add('bg-slate-900', 'text-slate-300');
+      });
+      event.target.classList.remove('bg-slate-900', 'text-slate-300');
+      event.target.classList.add('bg-blue-600', 'text-white');
+
+      if (!tag) {
+        document.getElementById('section-title').innerText = "Popular Stations";
+        fetchStations('/topclick/30');
+      } else {
+        document.getElementById('section-title').innerText = `${tag.toUpperCase()} Stations`;
+        fetchStations(`/bytag/${encodeURIComponent(tag)}?limit=30&order=clickcount&reverse=true`);
+      }
+    }
+
+    // Search input handler
+    searchInput.addEventListener('input', (e) => {
+      clearTimeout(debounceTimer);
+      const query = e.target.value.trim();
+      debounceTimer = setTimeout(() => {
+        if (query.length > 2) {
+          document.getElementById('section-title').innerText = `Search results for "${query}"`;
+          fetchStations(`/byname/${encodeURIComponent(query)}?limit=30`);
+        } else if (query.length === 0) {
+          document.getElementById('section-title').innerText = "Popular Stations";
+          fetchStations('/topclick/30');
+        }
+      }, 400);
+    });
+
+    // Volume Slider
+    volumeSlider.addEventListener('input', (e) => {
+      audio.volume = e.target.value;
+    });
+
+    function escapeHtml(str) {
+      return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    // Load initial stations
+    fetchStations();
+  </script>
+</body>
+</html>
